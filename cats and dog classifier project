@@ -1,0 +1,139 @@
+
+
+[ ]
+!mkdir -p ~/.kaggle!cp kaggle.json ~/.kaggle/
+!mkdir -p ~/.kaggle
+!cp kaggle.json ~/.kaggle/
+[ ]
+!kaggle datasets download -d salader/dogs-vs-cats
+!kaggle datasets download -d salader/dogs-vs-cats
+output
+Warning: Your Kaggle API key is readable by other users on this system! To fix this, you can run 'chmod 600 /root/.kaggle/kaggle.json'
+dogs-vs-cats.zip: Skipping, found more recently modified local copy (use --force to force download)
+[ ]
+import zipfilezip_ref = zipfile.ZipFile('/content/dogs-vs-cats.zip', 'r')zip_ref.extractall('/content')zip_ref.close()
+import zipfile
+zip_ref = zipfile.ZipFile('/content/dogs-vs-cats.zip', 'r')
+zip_ref.extractall('/content')
+zip_ref.close()
+[ ]
+import tensorflow as tffrom tensorflow import kerasfrom keras import Sequentialfrom keras.layers import Dense,Conv2D,MaxPooling2D,Flatten,BatchNormalization,Dropout
+import tensorflow as tf
+from tensorflow import keras
+from keras import Sequential
+from keras.layers import Dense,Conv2D,MaxPooling2D,Flatten,BatchNormalization,Dropout
+[ ]
+# generatorstrain_ds = keras.utils.image_dataset_from_directory(    directory = '/content/train',    labels='inferred',    label_mode = 'int',    batch_size=32,    image_size=(256,256))validation_ds = keras.utils.image_dataset_from_directory(    directory = '/content/test',    labels='inferred',    label_mode = 'int',    batch_size=32,    image_size=(256,256))
+# generators
+train_ds = keras.utils.image_dataset_from_directory(
+    directory = '/content/train',
+    labels='inferred',
+    label_mode = 'int',
+    batch_size=32,
+    image_size=(256,256)
+)
+
+validation_ds = keras.utils.image_dataset_from_directory(
+
+output
+Found 20000 files belonging to 2 classes.
+Found 5000 files belonging to 2 classes.
+[ ]
+# Normalize
+def process(image,label):
+    image = tf.cast(image/255. ,tf.float32)
+    return image,label
+
+train_ds = train_ds.map(process)
+validation_ds = validation_ds.map(process)
+[ ]
+# create CNN model
+
+model = Sequential()
+
+model.add(Conv2D(32,kernel_size=(3,3),padding='valid',activation='relu',input_shape=(256,256,3)))
+model.add(BatchNormalization())
+model.add(MaxPooling2D(pool_size=(2,2),strides=2,padding='valid'))
+
+model.add(Conv2D(64,kernel_size=(3,3),padding='valid',activation='relu'))
+model.add(BatchNormalization())
+model.add(MaxPooling2D(pool_size=(2,2),strides=2,padding='valid'))
+
+model.add(Conv2D(128,kernel_size=(3,3),padding='valid',activation='relu'))
+model.add(BatchNormalization())
+model.add(MaxPooling2D(pool_size=(2,2),strides=2,padding='valid'))
+
+model.add(Flatten())
+
+model.add(Dense(128,activation='relu'))
+model.add(Dropout(0.1))
+model.add(Dense(64,activation='relu'))
+model.add(Dropout(0.1))
+model.add(Dense(1,activation='sigmoid'))
+[ ]
+model.summary()
+output
+Model: "sequential_1"
+_________________________________________________________________
+ Layer (type)                Output Shape              Param #   
+=================================================================
+ conv2d_3 (Conv2D)           (None, 254, 254, 32)      896       
+                                                                 
+ batch_normalization (Batch  (None, 254, 254, 32)      128       
+ Normalization)                                                  
+                                                                 
+ max_pooling2d_3 (MaxPoolin  (None, 127, 127, 32)      0         
+ g2D)                                                            
+                                                                 
+ conv2d_4 (Conv2D)           (None, 125, 125, 64)      18496     
+                                                                 
+ batch_normalization_1 (Bat  (None, 125, 125, 64)      256       
+ chNormalization)                                                
+                                                                 
+ max_pooling2d_4 (MaxPoolin  (None, 62, 62, 64)        0         
+ g2D)                                                            
+                                                                 
+ conv2d_5 (Conv2D)           (None, 60, 60, 128)       73856     
+                                                                 
+ batch_normalization_2 (Bat  (None, 60, 60, 128)       512       
+ chNormalization)                                                
+                                                                 
+ max_pooling2d_5 (MaxPoolin  (None, 30, 30, 128)       0         
+ g2D)                                                            
+                                                                 
+ flatten_1 (Flatten)         (None, 115200)            0         
+                                                                 
+ dense_3 (Dense)             (None, 128)               14745728  
+                                                                 
+ dropout (Dropout)           (None, 128)               0         
+                                                                 
+ dense_4 (Dense)             (None, 64)                8256      
+                                                                 
+ dropout_1 (Dropout)         (None, 64)                0         
+                                                                 
+ dense_5 (Dense)             (None, 1)                 65        
+                                                                 
+=================================================================
+Total params: 14848193 (56.64 MB)
+Trainable params: 14847745 (56.64 MB)
+Non-trainable params: 448 (1.75 KB)
+_________________________________________________________________
+[ ]
+model.compile(optimizer='adam',loss='binary_crossentropy',metrics=['accuracy'])
+[ ]
+history = model.fit(train_ds,epochs=10,validation_data=validation_ds)
+account_circle
+Epoch 1/10
+625/625 [==============================] - 4219s 7s/step - loss: 1.2620 - accuracy: 0.6024 - val_loss: 0.6152 - val_accuracy: 0.6590
+Epoch 2/10
+499/625 [======================>.......] - ETA: 12:31 - loss: 0.5635 - accuracy: 0.7123
+[ ]
+import matplotlib.pyplot as plt
+
+plt.plot(history.history['accuracy'],color='red',label='train')
+plt.plot(history.history['val_accuracy'],color='blue',label='validation')
+plt.legend()
+plt.show()
+output
+
+
